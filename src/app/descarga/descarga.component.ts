@@ -1,4 +1,3 @@
-// src/app/descarga/descarga.component.ts
 
 import { Component } from '@angular/core';
 import jsPDF from 'jspdf';
@@ -14,13 +13,12 @@ export class DescargaComponent {
 
   downloadPdf(): void {
     const doc = new jsPDF({
-      orientation: 'portrait', // o 'landscape'
+      orientation: 'portrait', 
       unit: 'mm',
-      format: 'letter' // u otro formato de página
+      format: 'letter' 
     });
     
     
-    // Texto proporcionado
     const textMaxar = 'Las imágenes se entregarán en el modo MULTIESPECTRAL, con resolución espectral de hasta 4 bandas1, organizadas de la siguiente forma: 3 ' +
       'bandas en el espectro visible (Azul, Verde y Rojo) y 1 banda en el Infrarrojo (infrarrojo cercano) y resolución espacial submétrica que va desde ' +
       'los 0.5 m hasta los 0.3 m gracias a la fusión entre la imagen espectral y la potente captura nativa de los sensores pancromáticos presentes en ' +
@@ -29,10 +27,8 @@ export class DescargaComponent {
       'localización absoluta de 10 m. Están listas para integrar en un flujo de trabajo GIS, con fines como la creación y revisión de bases de datos de ' +
       'cartografía o actualización de capas ya existentes.';
 
-    // Agrega el texto al PDF
     this.addLine(doc, 10, textMaxar, 'left');
 
-    // Guarda el PDF con un nombre específico
     doc.save('mi-archivo.pdf');
   }
 
