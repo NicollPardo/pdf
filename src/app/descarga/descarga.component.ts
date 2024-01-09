@@ -3,221 +3,197 @@ import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-descarga',
-  template: '<button #contentButton (click)="downloadPdf()">Descargar PDF</button>',
+  template: '<button (click)="downloadPdf()">Descargar PDF</button>',
   styleUrls: ['./descarga.component.css']
 })
 export class DescargaComponent implements AfterViewInit {
+  @ViewChild('contentButton', { static: true }) contentButton!: ElementRef;
 
-  @ViewChild('contentButton', { static: false }) contentButton!: ElementRef;
+  downloadPdf() {
+    try {
+      const pdf = this.createPdf();
+      this.addContentToPdf(pdf);
+      this.addFooter(pdf);
 
-  constructor() {}
 
-  ngAfterViewInit(): void {
+      pdf.addPage();
 
-  }
-
-  downloadPdf(): void {
-    const pdf = new jsPDF();
-
-    // Primera página 
-    this.addFirstPage(pdf).then(() => {
-      // Segunda página
-      this.addHowAreYouPage(pdf);
-      // Tercera página
-      this.addTextAndImagesPage(pdf).then(() => {
-        // Cuarta página
-        this.addHowAreYouTextAndImagesPage(pdf).then(() => {
-          // Descargar el PDF
-          pdf.save('mi-archivo.pdf');
-        });
-      });
-    });
-  }
-
-  addFirstPage(pdf: any): Promise<void> {
-    return new Promise<void>((resolve) => {
-      let pageNumber = 0;
-      pdf.on('pageAdded', () => {
-        pageNumber++;
-        let bottom = pdf.page.margins.bottom;
-
-        if (pageNumber > 1) {
-        
-          pdf.image('assets/logos/logo mapas-02.png', pdf.page.width / 4 - 100, 25, { fit: [70, 70], align: 'center' });
-
-          pdf.font('Helvetica-Bold').fontSize(12);
-          pdf.text('COTIZACIÓN DE IMÁGENES', pdf.page.width / 2 + 45, 42, { width: pdf.page.width / 3, align: 'right' });
-
-          pdf
-            .moveTo(50, 55)
-            .lineTo(pdf.page.width - 50, 55)
-            .stroke();
-        }
-        pdf.page.margins.bottom = 0;
-        pdf
-          .moveTo(50, pdf.page.height - 60)
-          .lineTo(pdf.page.width - 50, pdf.page.height - 60)
-          .stroke();
-
-        pdf.font('Helvetica').fontSize(7);
-        pdf.text(
-          'www.procalculo.com - info@procalculo.com' + '\n' + 'PBX. + 57 (601) 745 1145' + '\n' + 'Calle 90 No. 13 A - 20 Piso 4' + '\n' + 'Bogotá - Colombia',
-          0.5 * (pdf.page.width - 150),
-          pdf.page.height - 55,
-          {
-            width: 150,
-            align: 'center',
-            lineBreak: false,
-          },
-        );
-
-        const options: any = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const today = new Date();
-        const todayString = today.toLocaleDateString('es-ES', options);
-        pdf.text(
-          'Fecha de generación: ' + todayString,
-          50,
-          pdf.page.height - 70,
-          {
-            width: pdf.page.width / 2,
-            align: 'left',
-            lineBreak: false,
-          },
-        );
-
-        pdf.text(
-          'Página ' + pageNumber,
-          pdf.page.width - 150,
-          pdf.page.height - 70,
-          {
-            width: 100,
-            align: 'right',
-            lineBreak: false,
-          },
-        );
-        pdf.page.margins.bottom = bottom;
-        
-        resolve();
-      });
-    });
-  }
-
-  addHowAreYouPage(pdf: any): void {
-    pdf.addPage();
-
-    pdf.text('', 50, 70);
-    pdf.fontSize(24);
-    pdf.moveDown();
-    pdf.font('Helvetica-Bold').fontSize(20);
-
-    pdf.text('INFORMACIÓN TÉCNICA', {
-      width: pdf.page.width - 100,
-      align: 'center',
-    });
-
-    pdf.moveDown();
-
-    
-    const cotizacion = { usuario: { nombre: 'John', apellido: 'Doe', organizacion: 'ABC Corp', correo: 'john.doe@example.com' } };
-    const imagenes = [
-      { proveedor: 'Proveedor1', temporalidad: 'Temporalidad1', area: 'Area1', cobertura: 'Cobertura1', nubosidad: 'Nubosidad1', angulo: 'Angulo1' },
-      
-    ];
-
-    const tableInfo = {
-      headers: [
-        { label: 'Nombre', property: 'nombre', width: 80, renderer: null },
-        { label: 'Descripción', property: 'description', width: 150, renderer: null },
-      ],
-      datas: [
-        { nombre: 'bold:Nombre:', description: `${cotizacion.usuario.nombre.toUpperCase()} ${cotizacion.usuario.apellido.toUpperCase()}` },
-        { nombre: 'bold:Organización:', description: `${(!cotizacion.usuario.organizacion) ? "--" : cotizacion.usuario.organizacion}` },
-        { nombre: 'bold:Correo:', description: `${cotizacion.usuario.correo}` },
-      ],
-    };
-
-    pdf.table(tableInfo, {
-      hideHeader: true,
-      divider: {
-        header: { disabled: true, width: 2, opacity: 1 },
-        horizontal: { disabled: true, width: 0.5, opacity: 0.5 },
-      },
-      prepareHeader: () => pdf.font('Helvetica-Bold').fontSize(8),
-      prepareRow: (row: any, indexColumn: any, indexRow: any, rectRow: any) => {
-        pdf.font("Helvetica").fontSize(10);
-        indexColumn === 0 && pdf.addBackground(rectRow, (indexRow % 2 ? 'white' : 'white'), 0.15);
-    },
-    });
-
-    pdf.moveDown();
-
-    pdf.font('Helvetica-Bold').fontSize(16);
-    pdf.text('LOCALIZACIÓN GENERAL', {
-      width: pdf.page.width - 100,
-      align: 'center',
-    });
-
-    pdf.moveDown();
-
-    const tableImages = {
-      title: '',
-      subtitle: 'Características generales:',
-      headers: [
-        { label: 'Proveedor', property: 'proveedor', valign: 'center', headerAlign: 'center', align: 'center' },
-        { label: 'Temporalidad', property: 'temporalidad', valign: 'center', headerAlign: 'center', align: 'center' },
-        { label: 'Área Imagen', property: 'area', valign: 'center', headerAlign: 'center', align: 'center' },
-        { label: 'Cobertura', property: 'cobertura', valign: 'center', headerAlign: 'center', align: 'center' },
-        { label: 'Nubosidad', property: 'nubosidad', valign: 'center', headerAlign: 'center', align: 'center' },
-        { label: 'Ángulo Nadir', property: 'angulo', valign: 'center', headerAlign: 'center', align: 'center' },
-      ],
-      rows: imagenes,
-    };
-
-    pdf.moveDown();
-    pdf.table(tableImages, {
-      columnsSize: [60, 140, 80, 80, 70, 70],
-    });
-  }
-
-  addTextAndImagesPage(pdf: any): Promise<void> {
-    return new Promise<void>((resolve) => {
   
-      pdf.addPage();
-      pdf.text('...', pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() / 2, { align: 'center' });
+      this.addHeaderToPdf(pdf);
 
-      resolve();
-    });
-  }
-
-  addHowAreYouTextAndImagesPage(pdf: any): Promise<void> {
-    return new Promise<void>((resolve) => {
-      pdf.addPage();
-
-      pdf.font('Helvetica-Bold').fontSize(16);
-      pdf.text('IMÁGENES MAXAR', {
-        width: pdf.page.width - 100,
-        align: 'center',
+      
+      this.addTechnicalInfoTitle(pdf, {
+        nombre: '--',
+        apellido: '--',
+        organizacion: '--',
+        correo: '--@procalculo.com',
       });
 
-      const textMaxar = 'Las imágenes se entregarán en el modo MULTIESPECTRAL, con resolución espectral de hasta 4 bandas1, organizadas de la siguiente forma: 3 ' +
-        'bandas en el espectro visible (Azul, Verde y Rojo) y 1 banda en el Infrarrojo (infrarrojo cercano) y resolución espacial submétrica que va desde ' +
-        'los 0.5 m hasta los 0.3 m gracias a la fusión entre la imagen espectral y la potente captura nativa de los sensores pancromáticos presentes en ' +
-        'todos los satélites de la constelación MAXAR, la cual se compone de los satélites WorldView-3, WorldView-2 y GeoEye-1.' + '\n\n' +
-        'Las imágenes se entregan corregidas radiométrica y geométricamente y con una ortorectificacion al vuelo que garantiza una precisión de ' +
-        'localización absoluta de 10 m. Están listas para integrar en un flujo de trabajo GIS, con fines como la creación y revisión de bases de datos de ' +
-        'cartografía o actualización de capas ya existentes.';
+      
+      this.addFooter(pdf);
 
-      this.addLine(pdf, 16, textMaxar, 'justify');
+      this.addThirdPage(pdf);
 
-      resolve();
+      this.addFourthPage(pdf);
+
+
+      pdf.save('archivo.pdf');
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+    }
+  }
+
+  createPdf(): jsPDF {
+    return new jsPDF({
+      unit: 'in',
     });
   }
 
-  addLine(pdf: any, size: number, texto: string, alineacion: string): void {
-    pdf.moveDown();
-    pdf.font('Helvetica').fontSize(size);
-    pdf.text(texto, {
-      align: alineacion,
+  addContentToPdf(pdf: jsPDF) {
+    const logoPath = 'assets/logos/logo mapas-02.png';
+    const imgWidth = 4;
+    const imgHeight = 1;
+
+    pdf.addImage(logoPath, 'PNG', 2, 2, imgWidth, imgHeight);
+
+    pdf.setFont('helvetica'); 
+    pdf.setFontSize(18);
+    pdf.text('COTIZACIÓN DE IMÁGENES', 2 + imgWidth / 2, 4 + imgHeight + 0.4, { align: 'center' });
+
+    const currentDate = new Date().toLocaleDateString();
+
+    pdf.setFont('helvetica'); 
+    pdf.setFontSize(10);
+    pdf.text(`Fecha de Generación: ${currentDate}`, 1, pdf.internal.pageSize.height - 1.0); // Ajustar la posición vertical
+
+    const hrYPos = pdf.internal.pageSize.height - 0.9;
+    pdf.setLineWidth(0.01);
+    pdf.line(1, hrYPos, pdf.internal.pageSize.width - 0.6, hrYPos);
+
+    pdf.text(`Página ${pdf.getNumberOfPages()}`, pdf.internal.pageSize.width - 1, pdf.internal.pageSize.height - 1.0, { align: 'right' });
+  }
+
+  addFooter(pdf: jsPDF) {
+    const footerText =
+      'www.procalculo.com - info@procalculo.com\n' +
+      'PBX. + 57 (601) 745 1145\n' +
+      'Calle 90 No. 13 A - 20 Piso 4\n' +
+      'Bogotá - Colombia';
+
+    pdf.setFontSize(10);
+    const lines = footerText.split('\n');
+    let yPos = pdf.internal.pageSize.height - 0.7;
+
+    lines.forEach((line) => {
+      pdf.text(line, 3, yPos);
+      yPos += 0.2; 
     });
+  }
+
+  addHeaderToPdf(pdf: jsPDF) {
+    const logoPath1 = 'assets/logos/logo mapas-02.png';
+    const logoPath2 = 'assets/logos/procalculoLogoAzul.png'; 
+    const imgWidth = 0.8;
+    const imgHeight = 0.4;
+
+    pdf.addImage(logoPath1, 'PNG', 1, 0.5, imgWidth, imgHeight);
+    pdf.addImage(logoPath2, 'PNG', pdf.internal.pageSize.width - imgWidth - 1, 0.4, imgWidth, imgHeight);
+
+    pdf.setFont('helvetica'); 
+    pdf.setFontSize(9);
+    pdf.text('COTIZACIÓN DE IMÁGENES', 6, 0.9); 
+
+    const hrYPos = 1.0; 
+    pdf.setLineWidth(0.01);
+    pdf.line(1, hrYPos, pdf.internal.pageSize.width - 0.6, hrYPos);
+
+    pdf.text(`Página ${pdf.getNumberOfPages()}`, pdf.internal.pageSize.width - 1, pdf.internal.pageSize.height - 1.0, { align: 'right' });
+
+    const currentDate = new Date().toLocaleDateString();
+    pdf.text(`Fecha de Generación: ${currentDate}`, 1, pdf.internal.pageSize.height - 1.0);
+    pdf.line(1, 10.8, pdf.internal.pageSize.width - 0.6, 10.8);
+  }
+
+  addTechnicalInfoTitle(pdf: jsPDF, usuario: any) {
+    pdf.setFont('helvetica'); 
+    pdf.setFontSize(15);
+    pdf.text('INFORMACIÓN TÉCNICA', pdf.internal.pageSize.width / 2, 1.3, { align: 'center' });
+    pdf.setLineWidth(0.01);
+
+    pdf.setFontSize(12);
+    pdf.text(`Nombre: ${usuario.nombre} ${usuario.apellido}`, 1, 1.7);
+    pdf.text(`Organización: ${(!usuario.organizacion) ? "--" : usuario.organizacion}`, 1, 2.0);
+    pdf.text(`Correo: ${usuario.correo}`, 1, 2.3);
+
+    pdf.setFontSize(13);
+    pdf.text('LOCALIZACIÓN GENERAL', pdf.internal.pageSize.width / 2, 3, { align: 'center' });
+
+    pdf.setFontSize(12);
+    pdf.text('La siguiente sección muestra el cubrimiento de las imágenes ofrecidas sobre el área de interés:', 0.8, 3.5);
+
+    pdf.setFontSize(10);
+    pdf.text('Cobertura Total: NaN Km2', 1, 4.0);
+    pdf.text('Cobertura Planet: Km2', 1, 4.3);
+    pdf.text('Cobertura Maxar: Km2', 1, 4.6);
+    pdf.text('AOI: 0 Km2', 1, 4.9);
+
+    const spaceHeight = 0.5; 
+    pdf.text('', 1, 4.9 + spaceHeight);
+
+    const imgPath1 = 'url.png'; 
+    const imgPath2 = 'url.png'; 
+    const imgWidth = 1.5; 
+    const imgHeight = 1.5; 
+
+    pdf.addImage(imgPath1, 'PNG', 1, 4.9 + spaceHeight + 0.1, imgWidth, imgHeight);
+    pdf.addImage(imgPath2, 'PNG', 2.5, 4.9 + spaceHeight + 0.1, imgWidth, imgHeight);
+  }
+
+  addThirdPage(pdf: jsPDF) {
+
+    pdf.addPage();
+    this.addHeaderToPdf(pdf);
+  
+    pdf.setFont('helvetica');
+    pdf.setFontSize(15);
+    pdf.text('IMÁGENES PLANET', pdf.internal.pageSize.width / 2, 1.3, { align: 'center' });
+    pdf.setLineWidth(0.01);
+  
+    const additionalText =
+      'Las imágenes se entregarán en el modo MULTIESPECTRAL, con resolución espectral de hasta 8 bandas1, organizadas ' +
+      'de la siguiente forma: 6 bandas en el espectro visible (Costal, Azul, Verde l, Verde, Amarillo y Rojo) y 2 bandas en el ' +
+      'Infrarrojo (Red Edge e infrarrojo cercano) y resolución espacial de 3.125 mt. Las imágenes serán entregadas en el ' +
+      'siguiente modo de procesamiento: ' +
+      '\n\n' +
+      'Planetscope Scene – El producto PlanetScope Scene está corregido radiométricamente, geométricamente, con ' +
+      'correcciones para el ángulo del sol y con corrección de color (usando una curva de color). Viene con ortorectificación ' +
+      'utilizando GCP y DEMs finos (30 m a 90 m posting) a <10 m RMSE de precisión posicional. Las imágenes se ' +
+      'ortorrectifican y se proyectan a una proyección UTM WGS84. ' +
+      '\n\n' +
+      'Este producto ha sido procesado para eliminar las distorsiones causadas por el terreno y puede ser utilizado para ' +
+      'propósitos de mapeo y visualización cartográfica. Esta corrección también elimina el efecto de perspectiva en el suelo (no ' +
+      'en edificios), la restauración de la geometría de un tiro vertical. Además, se hace una corrección para el ángulo de sol. ' +
+      'PlanetScope Scene es óptimo para un uso simple y directo de una imagen. Se diseña y se hace visualmente atractivo ' +
+      'para una amplia variedad de aplicaciones que requieren imágenes con una geolocalización exacta y proyección ' +
+      'cartográfica. El producto se puede utilizar y se ingiere directamente en un Sistema de Información Geográfica.';
+  
+    pdf.setFontSize(10);
+    
+   }
+   addFourthPage(pdf: jsPDF) {
+      pdf.addPage();
+  
+      this.addHeaderToPdf(pdf);
+  
+      pdf.setFont('helvetica');
+      pdf.setFontSize(15);
+      pdf.text('IMÁGENES MAXAR', pdf.internal.pageSize.width / 2, 1.3, { align: 'center' });
+      pdf.setLineWidth(0.01);
+  
+      this.addFooter(pdf);
+    }
+
+  ngAfterViewInit() {
+
   }
 }
